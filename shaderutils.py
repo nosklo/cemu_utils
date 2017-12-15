@@ -154,7 +154,7 @@ class ShaderUtils:
     def _on_btnopen(self):
         filename = filedialog.askopenfilename(
             title='Select shader cache file', 
-            initialdir='/home/nosklo/Games/WiiU/cemu_common/transferable/',
+            initialdir=None,
             filetypes=[('binary files', '*.bin')],
             parent=self.main,
         )
@@ -177,7 +177,7 @@ class ShaderUtils:
     def _on_btnmerge(self):
         filename = filedialog.askopenfilename(
             title='Select another shader cache file to merge', 
-            initialdir='/home/nosklo/Games/WiiU/cemu_common/transferable/',
+            initialdir=None,
             filetypes=[('binary files', '*.bin')],
             parent=self.main,
         )
@@ -211,8 +211,8 @@ class ShaderUtils:
             '{news} will be added.\n'
             'Are you sure you want to merge?'
         ).format(
-            total_merge=len(shadermerge.entries)-1,
-            dups=len(duplicate_keys),
+            total_merge=len(shadermerge.entries) - 1,
+            dups=len(duplicate_keys) - 1,
             news=len(new_keys),
         )
         if messagebox.askyesno(title='Confirm merge', message=display, 
