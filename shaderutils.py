@@ -324,7 +324,7 @@ class ShaderUtils:
                     'UNKNOWN_{t}'.format(t=shader_header['type'])),
                 name2=shader_header['name2'],
             )
-            with open(os.path.join(folder, filename), 'w') as f:
+            with open(os.path.join(folder, filename), 'wb') as f:
                 s.write(f)
 
     def update_display(self):
