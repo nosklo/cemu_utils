@@ -370,7 +370,7 @@ class ShaderUtils:
 if __name__ == '__main__':
     root = t.Tk()
     root.resizable(0, 0)
-    root.title('Shader Pack Tools v3 for CEMU')
+    root.title('Shader Pack Tools v4 for CEMU')
     app = ShaderUtils(root)
     root.mainloop()
 
