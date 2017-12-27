@@ -21,6 +21,8 @@ except ImportError:
     import tkFileDialog as filedialog
     import tkMessageBox as messagebox
 
+DEFAULT_PATH = None
+
 FILECACHE_MAGIC = 0x8371b694
 FILECACHE_MAGIC_V2 = 0x8371b695
 SHADER_HEADER_MAGIC = 0xc8d47908
@@ -79,7 +81,7 @@ class ShaderCache:
             self.original_size = 0
             self.header = {
                 'magic': FILECACHE_MAGIC_V2,
-                'extra_version': 0,
+                'extra_version': 1,
                 'data_offset': FILECACHE_HEADER_RESV,
             }
             table_entry = {
@@ -196,7 +198,7 @@ class ShaderUtils:
     def _on_btnopen(self):
         filenames = filedialog.askopenfilenames(
             title='Select shader cache files', 
-            initialdir=None,
+            initialdir=DEFAULT_PATH,
             filetypes=[('binary files', '*.bin')],
             parent=self.main,
         )
@@ -204,6 +206,7 @@ class ShaderUtils:
             return
 
         shadercache = self.read_shadercache(filenames[0])
+        print(shadercache.header)
         if len(filenames) == 1:
             self.filename = filenames[0]
             self.modified = False
@@ -223,7 +226,7 @@ class ShaderUtils:
         if self.filename is None:
             filename = filedialog.asksaveasfilename(
                 title='File to save as',
-                initialdir=None,
+                initialdir=DEFAULT_PATH,
                 filetypes=[('Shader cache files', '*.bin')],
                 parent=self.main,
             )
@@ -239,7 +242,7 @@ class ShaderUtils:
     def _on_btnmerge(self):
         filenames = filedialog.askopenfilenames(
             title='Select shader cache files to merge', 
-            initialdir=None,
+            initialdir=DEFAULT_PATH,
             filetypes=[('Shader cache files', '*.bin')],
             parent=self.main,
         )
