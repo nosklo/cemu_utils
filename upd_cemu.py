@@ -20,7 +20,7 @@ logger = logging.getLogger('upd_cemu')
 import tkinter as t
 import tkinter.ttk as ttk
 
-__version__ = 'beta1'
+__version__ = 'beta2'
 
 if getattr(sys, 'frozen', False):
     BASEDIR = os.path.dirname(sys.executable)
@@ -88,10 +88,11 @@ def download_pack(url, filename):
         shutil.move(filename + '.incomplete', filename)
         return True
 
-def detect_games(cemu_dir):
+def detect_games(cemu_mlc_dir):
     games = set()
     try:
-        save_path = os.path.join(cemu_dir, 'mlc01', 'usr', 'save')
+        save_path = os.path.join(cemu_mlc_dir, 'usr', 'save')
+        logger.debug('Searching for games in %r', cemu_mlc_dir)
         for hi_id in os.listdir(save_path):
             if len(hi_id) != 8 or hi_id not in IDS_TO_DETECT:
                 continue
@@ -231,7 +232,8 @@ def write_config(config, filename=CONFIG_FILENAME):
     logger.debug('Writing config to %r', filename)
     create_path(os.path.dirname(filename))
     config_write = config.copy()
-    config_write.pop('downloaded', None)
+    for key_remove in ('downloaded', 'command_line_args'):
+        config_write.pop(key_remove, None)
     for key_list in ('gameid_list', 'resolutions'):
         config_write[key_list] = list(config.get(key_list, ()))
     with open(filename, 'w') as f:
@@ -403,7 +405,10 @@ def read_resolution_file(filename):
     return resolutions
 
 def update_gameid_list(config):
-    new_games = detect_games(config.get('cemu_path', BASEDIR))
+    mlc_dir = getattr(config.get('command_line_args'), 'mlc', None)
+    if not mlc_dir:
+        mlc_dir = os.path.join(config.get('cemu_path', BASEDIR), 'mlc01')
+    new_games = detect_games(mlc_dir)
     if new_games != config['gameid_list']:
         logger.debug('Games changed: %r', new_games)
         config['gameid_list'] = new_games
@@ -419,7 +424,7 @@ def detect_changes_resolutions(config):
         config['resolutions'] = resolutions
         return True
     else:
-        logger.info('No change in resultions.')
+        logger.info('No change in resolutions.')
         return False
 
 def detect_changes_gameid_list(config):
@@ -512,17 +517,19 @@ def _configure_logging():
     return _memory_log
 
 def parse_args():
+    logger.debug('Command line: %r', sys.argv)
     parser = argparse.ArgumentParser(prog='upd_cemu')
     parser.add_argument('game', help="The game you want to run", nargs='?')
     parser.add_argument('-g', '--game', dest='game_compat', 
         help="Another way to specify the game, for compatibility with cemu")
+    parser.add_argument('-mlc', help="location of cemu mlc folder")
     parser.add_argument('-c', '--config', default=CONFIG_FILENAME,
         help="Config file to read instead of upd_cemu.json")
     args, extra = parser.parse_known_args()
     if args.game is None:
         args.game = args.game_compat
     return args, extra
-    
+
 if __name__ == '__main__':
     log_filename = os.path.join(BASEDIR, 'upd_cemu_crashlog.txt')
     memory_log = _configure_logging()
@@ -533,9 +540,16 @@ if __name__ == '__main__':
 
     try:
         config = read_config(args.config)
-        if not config:
+        if config:
+            extra_params = config.get('extra_params', None)
+            if extra_params:
+                # reparse command line with the extra args from config
+                sys.argv.extend(extra_params)
+                args, extra = parse_args() 
+        else:
             config = generate_config()
             logger.info('New config generated!')
+        config['command_line_args'] = args
         logger.debug('Config: %r', config)
         try:
             if detect_changes(config):
@@ -551,10 +565,8 @@ if __name__ == '__main__':
                 extra.extend(['-g', args.game])
                 if config.get('fullscreen', True) and '-f' not in extra:
                     extra.append('-f')
-            extra.extend([arg 
-                for arg in config.get('extra_params', ())
-                if arg not in extra
-            ])
+            if args.mlc:
+                extra.extend(['-mlc', args.mlc])
             exec_cemu(config['cemu_path'], extra)
     except:
         logger.exception('Fatal Error in main')
