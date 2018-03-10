@@ -20,7 +20,7 @@ logger = logging.getLogger('upd_cemu')
 import tkinter as t
 import tkinter.ttk as ttk
 
-__version__ = 'beta2'
+__version__ = 'beta3'
 
 if getattr(sys, 'frozen', False):
     BASEDIR = os.path.dirname(sys.executable)
@@ -316,7 +316,7 @@ def _parse_rules_txt(f,
     pack_name = None
     res = None
     for line in f:
-        line = line.decode().strip()
+        line = line.decode().partition('#')[0].strip()
         if _re_titleids.match(line):
             pack_game_ids = set(_id.strip().upper()
                 for _id in line.split('=', 1)[1].strip().split(','))
@@ -363,7 +363,8 @@ _NICKNAMES = [
     ((3440, 1440), ('2kuw', '2kultrawide', 'uwqhd')),
     ((3200, 1800), ('3k', 'qhd+')),
     ((3840, 2160), ('4k', 'uhd', '4kuhd')),
-    ((5120, 2160), ('5kuw', '5kultrawide', 'uw5k', 'uhd+')),
+    ((5120, 2160), ('5kuw', '5kultrawide', 'uw5k', 'uhd+', '5kultra-wide',
+                    '4kuw', 'uw4k', '4kultrawide', '4kultra-wide')),
     ((7680, 4320), ('8k', '8kuhd')),
 ]
 _NICKNAMES = {
@@ -381,10 +382,10 @@ def detect_res(text):
         if m.group(2):
             if height in _UWIDE_SPECIAL:
                 return _UWIDE_SPECIAL[height]
-            else:
-                return int(height * _UWIDE), height
-        else:
-            return int(height * _WIDE), height
+            else: # round to nearest even
+                return round((height * _UWIDE)/2)*2, height
+        else: # round to nearest even
+            return round((height * _WIDE)/2)*2, height
     return _NICKNAMES.get(text.replace(' ', ''))
 
 
